@@ -12,26 +12,30 @@ use Symfony\Component\HttpFoundation\Response;
 class RequireRoleMiddleware
 {
     /**
-     * @param  array<int, string>  $roles
+     * Enforce RBAC by role.
+     *
+     * This is a lightweight check:
+     * - Ensure user is authenticated (auth:sanctum).
+     * - Ensure user's role is in allowed roles.
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();
 
         if (!$user instanceof User) {
-            return ApiResponse::error('UNAUTHENTICATED', 'Unauthenticated.', Response::HTTP_UNAUTHORIZED);
+            return ApiResponse::error('UNAUTHENTICATED', status: Response::HTTP_UNAUTHORIZED);
         }
 
         $allowedRoles = array_values(array_filter($roles));
 
         if ($allowedRoles === []) {
-            return ApiResponse::error('FORBIDDEN', 'Forbidden.', Response::HTTP_FORBIDDEN);
+            return ApiResponse::error('FORBIDDEN', status: Response::HTTP_FORBIDDEN);
         }
 
         $roleValue = $user->role instanceof UserRole ? $user->role->value : (string) $user->role;
 
         if (!in_array($roleValue, $allowedRoles, true)) {
-            return ApiResponse::error('FORBIDDEN', 'Forbidden.', Response::HTTP_FORBIDDEN);
+            return ApiResponse::error('FORBIDDEN', status: Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

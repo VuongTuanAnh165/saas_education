@@ -15,7 +15,11 @@ class Sprint0Seeder extends Seeder
 {
     public function run(): void
     {
-        // Admin
+        // Sprint 0 fake data.
+        //
+        // - Creates an admin account for local/dev usage.
+        // - Creates a few teachers (tenants) and students for demo/testing.
+        //
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@example.com'],
             [
@@ -26,26 +30,25 @@ class Sprint0Seeder extends Seeder
             ]
         );
 
-        // Teachers + Students
         $teachers = Teacher::factory()
             ->count(3)
             ->create([
                 'status' => TeacherStatus::ACTIVE,
             ])
             ->each(function (Teacher $teacher) {
-                // Ensure teacher user role/status
+                // Ensure teacher user role/status are correct.
                 $teacher->user()->update([
                     'role' => UserRole::TEACHER,
                     'status' => UserStatus::ACTIVE,
                 ]);
 
-                // Students for each teacher
                 Student::factory()
                     ->count(5)
                     ->create([
                         'teacher_id' => $teacher->id,
                     ])
                     ->each(function (Student $student) {
+                        // Ensure student user role/status are correct.
                         $student->user()->update([
                             'role' => UserRole::STUDENT,
                             'status' => UserStatus::ACTIVE,
@@ -53,7 +56,7 @@ class Sprint0Seeder extends Seeder
                     });
             });
 
-        // Sample audit logs
+        // Sample audit logs (to demo audit log feature in Sprint 0)
         foreach ($teachers as $teacher) {
             AuditLog::query()->create([
                 'actor_user_id' => $admin->id,

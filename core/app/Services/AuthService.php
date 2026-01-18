@@ -18,6 +18,13 @@ class AuthService
     }
 
     /**
+     * Login and issue a Sanctum token (Sprint 0).
+     *
+     * Rules:
+     * - Validate credentials.
+     * - Enforce user/teacher status (chain lock) via TenantContextService.
+     * - Return token + minimal user profile.
+     *
      * @return array{token: string, user: array<string, mixed>}
      */
     public function login(string $email, string $password): array
@@ -56,6 +63,9 @@ class AuthService
         ];
     }
 
+    /**
+     * Revoke the current Sanctum token (Sprint 0).
+     */
     public function logout(User $actor): void
     {
         $token = $actor->currentAccessToken();
@@ -75,6 +85,13 @@ class AuthService
         );
     }
 
+    /**
+     * Forgot password (Sprint 0, Option B).
+     *
+     * - Do not return reset URL.
+     * - Trigger Laravel's reset-link flow (mail may be configured later).
+     * - Always behave safely: if user is not found, just return.
+     */
     public function forgotPassword(string $email): void
     {
         /** @var User|null $user */
@@ -84,8 +101,6 @@ class AuthService
             return;
         }
 
-        // Option B: production-like. Only trigger mail flow (if configured), no URL returned.
-        // If mail is not configured, Password::sendResetLink will still return status and may log.
         Password::sendResetLink(['email' => $email]);
 
         $resolved = $this->tenantContextService->resolveTenant($user);
@@ -97,6 +112,11 @@ class AuthService
         );
     }
 
+    /**
+     * Create a set-password link for onboarding.
+     *
+     * Used by Admin create teacher (Sprint 0). Token is stored on users table.
+     */
     public function createPasswordSetupLinkForUser(User $targetUser, int $expiresInMinutes = 60): string
     {
         $token = bin2hex(random_bytes(32));
@@ -111,6 +131,9 @@ class AuthService
         return $clientUrl.'/set-password?token='.$token;
     }
 
+    /**
+     * Set password by setup token (onboarding).
+     */
     public function setPasswordBySetupToken(string $token, string $password): void
     {
         /** @var User|null $user */
@@ -152,6 +175,9 @@ class AuthService
         );
     }
 
+    /**
+     * Convenience guard for protected endpoints.
+     */
     public function ensureActive(User $user): void
     {
         if ($user->status !== UserStatus::ACTIVE) {

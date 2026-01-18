@@ -12,13 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('audit_logs', function (Blueprint $table) {
+            $table->comment('Stores audit trail for important system actions');
+
             $table->id();
-            $table->foreignId('actor_user_id')->constrained('users');
-            $table->foreignId('teacher_id')->nullable()->constrained('teachers');
-            $table->string('action');
-            $table->string('target_type')->nullable();
-            $table->unsignedBigInteger('target_id')->nullable();
-            $table->json('metadata')->nullable();
+            $table->foreignId('actor_user_id')->comment('The user who performed the action')->constrained('users');
+            $table->foreignId('teacher_id')->nullable()->comment('The tenant context for the action')->constrained('teachers');
+            $table->string('action')->comment('Machine-readable action code (e.g., AUTH_LOGIN)');
+            $table->string('target_type')->nullable()->comment('Polymorphic relation: target model class');
+            $table->unsignedBigInteger('target_id')->nullable()->comment('Polymorphic relation: target model ID');
+            $table->json('metadata')->nullable()->comment('Additional context for the action');
             $table->timestamps();
 
             $table->index(['teacher_id', 'action']);

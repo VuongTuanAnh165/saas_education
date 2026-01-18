@@ -16,6 +16,13 @@ class LocaleMiddleware
      */
     private array $supportedLocales = ['vi', 'en'];
 
+    /**
+     * Set application locale for each request.
+     *
+     * - Local env: prefer APP_LOCALE to make dev/testing easier.
+     * - Non-local env: honor Accept-Language when provided.
+     * - Always return Content-Language header.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $locale = $this->resolveLocale($request);
@@ -29,10 +36,20 @@ class LocaleMiddleware
 
     private function resolveLocale(Request $request): string
     {
+        if (config('app.env') === 'local') {
+            $defaultLocale = (string) config('app.locale', 'vi');
+
+            if (in_array($defaultLocale, $this->supportedLocales, true)) {
+                return $defaultLocale;
+            }
+
+            return 'vi';
+        }
+
         $header = $request->headers->get('Accept-Language');
 
         if (!is_string($header) || trim($header) === '') {
-            return 'vi';
+            return (string) config('app.locale', 'vi');
         }
 
         $primary = strtolower(trim(explode(',', $header)[0]));
@@ -42,6 +59,6 @@ class LocaleMiddleware
             return $primary;
         }
 
-        return 'vi';
+        return (string) config('app.locale', 'vi');
     }
 }

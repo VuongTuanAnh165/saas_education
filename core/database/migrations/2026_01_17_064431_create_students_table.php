@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('students', function (Blueprint $table) {
+            $table->comment('Stores student information, linked to a teacher tenant');
+
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('teacher_id')->constrained('teachers')->cascadeOnDelete();
-            $table->string('full_name');
+            $table->foreignId('user_id')->comment('Link to the users table')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('teacher_id')->comment('The teacher (tenant) this student belongs to')->constrained('teachers')->cascadeOnDelete();
+            $table->string('full_name')->comment('Full name of the student');
             $table->timestamps();
 
             $table->unique('user_id');

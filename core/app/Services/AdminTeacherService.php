@@ -21,6 +21,12 @@ class AdminTeacherService
     }
 
     /**
+     * Admin creates a Teacher tenant (Sprint 0).
+     *
+     * - Creates Teacher user (role=teacher) and Teacher record in a transaction.
+     * - Returns set-password URL (onboarding) instead of returning a temp password.
+     * - Does not assign subscription/pricing in Sprint 0.
+     *
      * @return array{teacher: Teacher, user: User, setPasswordUrl: string}
      */
     public function createTeacher(User $actor, string $email, string $displayName): array
@@ -73,6 +79,12 @@ class AdminTeacherService
         return $created;
     }
 
+    /**
+     * Admin locks a Teacher tenant.
+     *
+     * Sprint 0 decision: do NOT suspend teacher user's status.
+     * Chain lock is enforced by checking teacher.status at runtime.
+     */
     public function lockTeacher(User $actor, int $teacherId): void
     {
         $this->tenantContextService->assertActorCanAccessSystem($actor);
@@ -90,9 +102,6 @@ class AdminTeacherService
 
         $teacher->forceFill(['status' => TeacherStatus::SUSPENDED])->save();
 
-        // Sprint 0 decision: do NOT suspend teacher user status.
-        // Chain lock will be enforced by checking teacher.status at runtime.
-
         $this->auditLogService->write(
             actorUserId: $actor->id,
             teacherId: null,
@@ -102,6 +111,9 @@ class AdminTeacherService
         );
     }
 
+    /**
+     * Admin unlocks a Teacher tenant.
+     */
     public function unlockTeacher(User $actor, int $teacherId): void
     {
         $this->tenantContextService->assertActorCanAccessSystem($actor);

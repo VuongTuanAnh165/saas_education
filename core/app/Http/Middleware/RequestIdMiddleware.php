@@ -11,6 +11,13 @@ class RequestIdMiddleware
     public const HEADER_NAME = 'X-Request-Id';
     public const ATTRIBUTE_NAME = 'request_id';
 
+    /**
+     * Ensure every request has a request id for tracing.
+     *
+     * - If client provides X-Request-Id, reuse it.
+     * - Otherwise generate a UUID.
+     * - Attach request id to request attributes and return it in response header.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $requestId = $request->headers->get(self::HEADER_NAME);

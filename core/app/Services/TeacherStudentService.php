@@ -21,6 +21,13 @@ class TeacherStudentService
     }
 
     /**
+     * Teacher creates a Student (Sprint 0).
+     *
+     * Invariants:
+     * - teacher_id MUST be resolved from authenticated context (TenantContextService), never from client request.
+     * - Student user is created with role=student.
+     * - If email is provided, a set-password URL is generated for onboarding.
+     *
      * @return array{student: Student, user: User, setPasswordUrl: string|null}
      */
     public function createStudent(User $actor, string $fullName, ?string $email): array

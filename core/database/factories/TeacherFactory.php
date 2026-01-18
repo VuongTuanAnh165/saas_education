@@ -16,6 +16,8 @@ class TeacherFactory extends Factory
 
     public function definition(): array
     {
+        // Creates a Teacher tenant with a linked user.
+        // Note: role/status for the linked user is enforced in Sprint0Seeder.
         return [
             'user_id' => User::factory(),
             'display_name' => $this->faker->name(),

@@ -7,6 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class TeacherStudentCreatedDataResource extends JsonResource
 {
+    /**
+     * Schema for TEACHER_STUDENT_CREATED.
+     *
+     * This resource exists to provide a stable "data" schema for Scramble docs.
+     */
     public function toArray(Request $request): array
     {
         return [

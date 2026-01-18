@@ -70,8 +70,8 @@ Tài liệu này là **bộ luật code chính thức** cho các dự án Larave
 
 ### 2.4 API Code Convention (MUST)
 - **MUST** dùng `SCREAMING_SNAKE_CASE` cho `code` trong API response.
-- **MUST** namespace hoá `code` cho success (ví dụ: `AUTH_LOGIN_SUCCESS`, `ADMIN_TEACHER_CREATED`, `TEACHER_STUDENT_CREATED`).
-- **MUST** dùng `SCREAMING_SNAKE_CASE` cho error codes (ví dụ: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `TEACHER_SUSPENDED`).
+- **MUST** namespace hoá `code` cho success (ví dụ: `AUTH_LOGIN_SUCCESS`, `ADMIN_TEACHER_CREATED`).
+- **MUST** dùng `SCREAMING_SNAKE_CASE` cho error codes (ví dụ: `VALIDATION_ERROR`, `UNAUTHENTICATED`).
 
 ---
 
@@ -82,7 +82,7 @@ Tài liệu này là **bộ luật code chính thức** cho các dự án Larave
 - **MUST NOT** commit code không format.
 
 ### 3.2 Strictness
-- **MUST** bật `declare(strict_types=1);` cho các class/file thuần PHP (không bắt buộc cho file Laravel auto-generated nếu team chưa chuẩn hoá).
+- **MUST NOT** dùng `declare(strict_types=1);` để giữ style nhất quán với Laravel skeleton.
 - **SHOULD** type-hint đầy đủ: param/return types, property types.
 
 ### 3.3 Static analysis
@@ -280,92 +280,52 @@ Repository là lớp chịu trách nhiệm **query data** (đọc/ghi DB) theo k
 - **MUST** response lỗi format ổn định.
 - **MUST NOT** leak stacktrace ra client.
 
----
+### 11.4 API Response Contract (MUST)
 
-## 11.4 API Response Contract (MUST)
-
-### 11.4.1 Response envelope
+#### 11.4.1 Response envelope
 - **MUST** mọi API trả về cùng một envelope để frontend có thể xử lý thống nhất.
 - **MUST** trả response qua `App\Http\Responses\ApiResponse`.
 - **MUST** render envelope bằng `App\Http\Resources\ApiResponseResource`.
 
-Success:
-
-```json
-{
-  "success": true,
-  "code": "AUTH_LOGIN_SUCCESS",
-  "message": "Đăng nhập thành công.",
-  "data": {},
-  "meta": {
-    "request_id": "uuid",
-    "timestamp": "2026-01-17T00:00:00Z"
-  }
-}
-```
-
-Error:
-
-```json
-{
-  "success": false,
-  "code": "FORBIDDEN",
-  "message": "Bạn không có quyền truy cập.",
-  "data": {},
-  "meta": {
-    "request_id": "uuid",
-    "timestamp": "2026-01-17T00:00:00Z"
-  }
-}
-```
-
-### 11.4.2 `data` must be object
+#### 11.4.2 `data` must be object
 - **MUST** `data` luôn là object.
 - **MUST NOT** trả `data: null`.
 - Với response không có payload, `data` phải là `{}`.
 
-### 11.4.3 Validation error
+#### 11.4.3 Validation error
 - **MUST** dùng `code=VALIDATION_ERROR` và trả chi tiết lỗi ở `data.errors`.
 
-### 11.4.4 Request ID
+#### 11.4.4 Request ID
 - **MUST** hỗ trợ trace thông qua `X-Request-Id`.
-- Nếu client không gửi `X-Request-Id`, server **MUST** tự sinh request id.
-- Response **MUST** trả lại header `X-Request-Id`.
 
-### 11.4.5 i18n message
+#### 11.4.5 i18n message
 - **MUST** hỗ trợ đa ngôn ngữ thông qua header `Accept-Language`.
-- **MUST** hỗ trợ tối thiểu `vi`, `en`.
-- **MUST** trả `Content-Language` trong response.
 
-### 11.4.6 Translation key convention
+#### 11.4.6 Translation key convention
 - **MUST** translation keys là `snake_case` theo convention Laravel.
 - **MUST** map translation key từ `code` theo quy tắc: `snake_case(code)`.
-  - Ví dụ: `TEACHER_SUSPENDED` -> `teacher_suspended`
-  - Ví dụ: `AUTH_LOGIN_SUCCESS` -> `auth_login_success`
 
----
-
-## 11.5 HTTP Status Code Convention (MUST)
+### 11.5 HTTP Status Code Convention (MUST)
 
 - **MUST NOT** hard-code số status code như `401`, `403`.
 - **MUST** dùng `Symfony\Component\HttpFoundation\Response::HTTP_*`.
 
----
-
-## 11.6 API Documentation (Scramble) (MUST)
+### 11.6 API Documentation (Scramble) (MUST)
 
 - **MUST** dùng `dedoc/scramble` để generate OpenAPI.
-- **MUST** đảm bảo `/docs/api` hiển thị đầy đủ schema `data`.
 - **MUST** dùng `JsonResource` (ví dụ `*DataResource`) cho mọi response có payload để Scramble suy ra schema.
-- Với response rỗng, **MUST** dùng `EmptyDataResource` để `data` vẫn là object.
+
+### 11.7 Commenting Guidelines (MUST/SHOULD)
+
+- **MUST** thêm comment ngắn gọn ở những nơi có **invariant/assumption/flow nghiệp vụ**.
+- **MUST NOT** comment lặp lại những gì tên hàm/biến đã rõ.
 
 ---
 
 ## 12. Validation Rules (MUST)
 
 - **MUST**: FormRequest theo use-case (`CreateUserRequest` khác `UpdateUserRequest`).
-- **SHOULD**: Rule phức tạp -> Custom Rule class.
-- **SHOULD**: Validate theo ngữ cảnh (route/role/state).
+- **MUST** đảm bảo có lang file `validation.php` cho các locale được hỗ trợ và map `attributes` cho field quan trọng.
 
 ---
 
@@ -382,7 +342,6 @@ Error:
 - **MUST**: dispatch event/job trong Service sau khi nghiệp vụ thành công.
 - **SHOULD**: tác vụ nặng/IO (email, gọi API, export, sync) đưa vào Job.
 - **MUST**: Job phải idempotent (chạy lại không tạo sai dữ liệu).
-- **SHOULD**: dùng retry/backoff hợp lý, và dead-letter/failed jobs theo chuẩn project.
 
 ---
 
@@ -397,7 +356,9 @@ Error:
 ## 16. Database & Migration Rules (MUST)
 
 - **MUST** migration có rollback được.
-- **MUST** tạo index cho các cột filter/sort/join quan trọng.
+- **MUST** tạo index cho các cột filter/omment(...)`) để giải thích mục đích.
+- **MUST** comment cho các cột quan trọng (foreign keys, enums, cột có logic đặc biệt) (`->comment(...)`).
+- **MUST** cập nhật tài liệu .documents/cr_database.md khi có bất kỳ thay đổi nào về schema (thêm/sửa/xóa bảng hoặc cột).
 - **MUST NOT** làm migration “nặng” trên bảng lớn trong giờ cao điểm nếu không có plan.
 - **SHOULD** dùng soft delete khi domain yêu cầu audit/khôi phục.
 

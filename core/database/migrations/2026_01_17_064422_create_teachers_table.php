@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('teachers', function (Blueprint $table) {
+            $table->comment('Stores teacher tenant information');
+
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('display_name');
-            $table->string('status', 32)->default('active');
+            $table->foreignId('user_id')->comment('Link to the users table')->constrained('users')->cascadeOnDelete();
+            $table->string('display_name')->comment('Public display name for the teacher');
+            $table->string('status', 32)->default('active')->comment('Teacher tenant status: ACTIVE, SUSPENDED');
             $table->timestamps();
 
             $table->unique('user_id');

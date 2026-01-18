@@ -16,6 +16,8 @@ class StudentFactory extends Factory
 
     public function definition(): array
     {
+        // Creates a Student linked to a teacher and a user.
+        // Note: role/status for the linked user is enforced in Sprint0Seeder.
         return [
             'user_id' => User::factory(),
             'teacher_id' => Teacher::factory(),

@@ -7,6 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AuthLoginDataResource extends JsonResource
 {
+    /**
+     * Schema for AUTH_LOGIN_SUCCESS.
+     *
+     * This resource exists to provide a stable "data" schema for Scramble docs.
+     */
     public function toArray(Request $request): array
     {
         return [
