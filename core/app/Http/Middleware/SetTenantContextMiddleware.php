@@ -4,18 +4,24 @@ namespace App\Http\Middleware;
 
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Services\TenantContextService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetTenantContextMiddleware
 {
+    public function __construct(
+        private readonly TenantContextService $tenantContextService,
+    ) {
+    }
+
     /**
      * Attach actor context to the request.
      *
      * Sprint 0 note:
-     * - Tenant isolation is enforced in service layer (TenantContextService).
-     * - Middleware MUST stay thin and MUST NOT query tenant data.
+     * - Tenant isolation is enforced by resolving tenant from authenticated user.
+     * - teacher_id MUST NOT come from client request.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -26,6 +32,7 @@ class SetTenantContextMiddleware
         }
 
         $request->attributes->set('actor_user_id', $user->id);
+        $request->attributes->set('tenant_teacher_id', $this->tenantContextService->resolveTenant($user)['teacherId']);
 
         return $next($request);
     }

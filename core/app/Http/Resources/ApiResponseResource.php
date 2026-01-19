@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Http\Middleware\RequestIdMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 
 class ApiResponseResource extends JsonResource
 {
@@ -37,6 +38,17 @@ class ApiResponseResource extends JsonResource
     {
         // API contract: data MUST be an object (never null).
         $data = $this->data;
+
+        // If controller passes a JsonResource instance, resolve it into plain data.
+        // JsonResource should not be nested as an object in a custom envelope.
+        if ($data instanceof JsonResource) {
+            $data = $data->resolve($request);
+        }
+
+        // Normalize common data containers.
+        if ($data instanceof Collection) {
+            $data = $data->toArray();
+        }
 
         if ($data === null) {
             $data = (object) [];

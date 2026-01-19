@@ -2,6 +2,8 @@
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Teacher;
+use App\Enums\TeacherStatus;
 use App\Models\User;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -12,6 +14,12 @@ it('can login with valid credentials and returns api envelope', function () {
         'password' => 'password123',
         'role' => UserRole::TEACHER,
         'status' => UserStatus::ACTIVE,
+    ]);
+
+    Teacher::query()->create([
+        'user_id' => $user->id,
+        'display_name' => 'Teacher A',
+        'status' => TeacherStatus::ACTIVE,
     ]);
 
     $resp = $this->postJson('/api/auth/login', [
