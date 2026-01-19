@@ -356,9 +356,9 @@ Repository là lớp chịu trách nhiệm **query data** (đọc/ghi DB) theo k
 ## 16. Database & Migration Rules (MUST)
 
 - **MUST** migration có rollback được.
-- **MUST** tạo index cho các cột filter/omment(...)`) để giải thích mục đích.
-- **MUST** comment cho các cột quan trọng (foreign keys, enums, cột có logic đặc biệt) (`->comment(...)`).
-- **MUST** cập nhật tài liệu .documents/cr_database.md khi có bất kỳ thay đổi nào về schema (thêm/sửa/xóa bảng hoặc cột).
+- **MUST** tạo index cho các cột filter/sort/join quan trọng.
+- **MUST** comment cho table (`$table->comment(...)`) và các cột quan trọng (foreign keys, enums, etc.) (`->comment(...)`).
+- **MUST** cập nhật tài liệu `.documents/cr_database.md` khi có bất kỳ thay đổi nào về schema.
 - **MUST NOT** làm migration “nặng” trên bảng lớn trong giờ cao điểm nếu không có plan.
 - **SHOULD** dùng soft delete khi domain yêu cầu audit/khôi phục.
 
