@@ -1,203 +1,162 @@
-# Nuxt Coding Rules & Guidelines
-Chuẩn hoá TOÀN DIỆN – Senior / Lead / Production Level
+# Nuxt 4 + Vue 3 + TypeScript Coding Rules
+Bộ rule chuẩn hoá để code/review/CI **enforceable** (team nhiều dev, maintain dài hạn)
 
-Tài liệu này là **bộ luật code chính thức** cho các dự án Nuxt (Nuxt 3+) dùng lâu dài, team nhiều dev, yêu cầu cao về chất lượng – bảo trì – mở rộng – hiệu năng – bảo mật.
+Tài liệu này áp dụng cho project hiện tại với:
+- **Nuxt** `^4.2.2`
+- **Vue** `^3.5.x`
+- **TypeScript** `^5.9.x`
+- **Pinia** `^3.x` + `@pinia/nuxt`
+- **@nuxtjs/i18n** `^10.x`
+- **Vuetify** `^3.x`
+- **ESLint** (antfu config + eslint 9)
 
-**Mục tiêu tối thượng**
-- Bất kỳ dev nào vào project cũng code ra kết quả giống nhau về **cấu trúc**, **tư duy**, **phong cách**.
-- Rule phải **enforceable** khi review PR và khi chạy CI.
+## 0) Mức độ bắt buộc
+- **MUST**: bắt buộc (vi phạm => reject PR).
+- **SHOULD**: khuyến nghị mạnh (vi phạm phải có lý do trong PR).
+- **MUST NOT**: cấm.
 
-**Nguyên tắc áp dụng**
-- Nếu rule xung đột với yêu cầu sản phẩm, Tech Lead ra quyết định và ghi rõ trong PR.
-- Mọi ngoại lệ phải có lý do và phạm vi ảnh hưởng.
+## 1) Nguyên tắc kiến trúc
+- **Single Responsibility (MUST)**: 1 module (component/composable/store) chỉ có 1 trách nhiệm.
+- **DRY (MUST)**: không copy-paste logic. Tách `composables/`, `utils/`, `stores/`.
+- **KISS (MUST)**: ưu tiên cách đơn giản, rõ ràng.
+- **Composition over inheritance (MUST)**: Composition API + composables, không dùng mixins.
+- **Client/Server boundary (MUST)**: code phụ thuộc browser API (window/document/localStorage) phải được guard (ví dụ `import.meta.client`, `process.client`) hoặc bọc trong lifecycle client-only.
 
----
+## 2) Quality gates (enforce bằng CI)
+- **ESLint/Formatting (MUST)**: code phải pass ESLint + format theo config repo.
+- **TypeScript strictness (SHOULD)**: ưu tiên bật strict/strong typing. Không “tắt lỗi” bằng `any`.
+- **No dead code (MUST)**: không để file/exports không dùng.
+- **No debug artifacts (MUST NOT)**: không commit `console.log` (trừ khi log có chủ đích + được TL duyệt).
 
-## 0. Must / Should / Must Not
-- **MUST**: bắt buộc, vi phạm là reject PR.
-- **SHOULD**: khuyến nghị mạnh, vi phạm phải có lý do.
-- **MUST NOT**: cấm tuyệt đối.
-
----
-
-## 1. Triết lý & Nguyên tắc gốc
-
-- **Single Responsibility (MUST)**: 1 component/composable chỉ làm 1 việc.
-- **DRY (Don't Repeat Yourself) (MUST)**: không copy-paste logic, trích xuất `Composable` / `Component` / `Util`.
-- **KISS (Keep It Simple, Stupid) (MUST)**: ưu tiên giải pháp đơn giản, dễ hiểu.
-- **Composition over Inheritance (MUST)**: ưu tiên dùng Composition API (composables) thay vì mixins hoặc các pattern kế thừa phức tạp.
-
----
-
-## 2. Code Style & Quality Gates (MUST)
-
-- **Formatting (MUST)**: dùng Prettier và ESLint theo config của project. **MUST NOT** commit code không format.
-- **Linting (MUST)**: tuân thủ rule ESLint (khuyến nghị: `@nuxtjs/eslint-config-typescript`).
-- **TypeScript (MUST)**: toàn bộ codebase phải dùng TypeScript. **MUST** bật `strict: true` trong `tsconfig.json`.
-- **Static Analysis (SHOULD)**: dùng Volar/Vue TSC để check type error trong template.
-
----
-
-## 3. Naming Convention (MUST)
-
+## 3) Naming conventions
 | Loại | Quy ước | Ví dụ |
 | --- | --- | --- |
 | Component | `PascalCase` | `UserProfileCard.vue` |
-| Page | `kebab-case` | `user-profile.vue` |
+| Page route file | `kebab-case` | `user-profile.vue` |
 | Layout | `kebab-case` | `default.vue`, `auth.vue` |
-| Composable | `camelCase`, bắt đầu bằng `use` | `useAuth`, `useApiFetch` |
-| Pinia Store | `camelCase` + `Store` | `authStore`, `cartStore` |
-| Util/Helper | `camelCase` | `formatDate.ts` |
-| API Route | `kebab-case` | `users.get.ts`, `auth/login.post.ts` |
-| Variable/Function | `camelCase` | `const userProfile = ...` |
-| Constant | `SCREAMING_SNAKE_CASE` | `const API_TIMEOUT = 5000;` |
-| Type/Interface | `PascalCase` | `interface UserProfile { ... }` |
+| Composable | `use` + `PascalCase`/`camelCase` | `useAuth()`, `useApiFetch()` |
+| Pinia store id | `camelCase` | `useAuthStore()` -> id `auth` |
+| Util | `camelCase` | `formatDate.ts` |
+| Server API route | `kebab-case` + method suffix | `users.get.ts`, `auth/login.post.ts` |
+| Type / Interface | `PascalCase` | `UserProfile`, `ApiError` |
+| Const | `SCREAMING_SNAKE_CASE` | `API_TIMEOUT_MS` |
 
----
+**MUST**: tên file/biến phải phản ánh ý nghĩa domain (không dùng `data1`, `tmp`, `handle2`).
 
-## 4. Cấu trúc thư mục (MUST)
-
-Tuân thủ cấu trúc mặc định của Nuxt và mở rộng theo feature.
+## 4) Project structure (Nuxt conventions first)
+Ưu tiên dùng đúng convention của Nuxt (auto-import, file-based routing), chỉ mở rộng khi có lý do.
 
 ```
 client/
- ├── assets/              # Font, icon, global CSS
- ├── components/          # Component tái sử dụng
- │   ├── global/          # Component đăng ký global (BaseButton.vue)
- │   └── features/        # Component theo từng feature (UserProfile/)
- ├── composables/         # Logic tái sử dụng (useAuth.ts)
- ├── layouts/             # Layout chung (default.vue)
- ├── middleware/          # Route middleware (auth.global.ts)
- ├── pages/               # File-based routing
- ├── plugins/             # Plugin (sentry.client.ts)
- ├── public/              # File tĩnh (favicon.ico)
- ├── server/              # Server engine (Nitro)
- │   ├── api/             # API routes (auth/login.post.ts)
- │   ├── middleware/      # Server middleware
- │   └── utils/           # Util phía server
- ├── store/               # Pinia stores (auth.ts)
- ├── types/               # Global type definitions (index.d.ts)
- └── utils/               # Util phía client (formatters, validators)
+  assets/            # css/fonts/images compile-time
+  components/        # reusable UI (khuyến nghị theo feature)
+  composables/       # reusable logic (useX)
+  layouts/           # app layouts
+  middleware/        # route middleware
+  pages/             # routes
+  plugins/           # nuxt plugins
+  public/            # static files served as-is
+  server/
+    api/             # nitro api routes
+    middleware/      # nitro middleware
+    utils/           # server-only helpers
+  stores/            # pinia stores (khuyến nghị tên `stores/` thay vì `store/`)
+  types/             # shared types
+  utils/             # pure helpers (no Vue dependency)
 ```
 
-- **Feature-based structure (SHOULD)**: trong `components`, `composables`, `store`, nên nhóm file theo feature để dễ quản lý.
+- **Feature-based grouping (SHOULD)**: group theo feature trong `components/`, `composables/`, `stores/` (ví dụ `components/course/`, `stores/course.ts`).
+- **Cross-cutting (MUST)**: util thuần phải nằm `utils/` (không import Vue/Nuxt APIs trong util).
 
----
+## 5) Vue SFC rules
+- **`<script setup lang="ts">` (MUST)** cho tất cả SFC.
+- **Props/Emits typing (MUST)**:
+  - dùng typed `defineProps` / `defineEmits`.
+  - props optional cần default rõ ràng (hoặc dùng `withDefaults`).
+- **Template safety (MUST)**: không truy cập property có thể `undefined` mà không guard (optional chaining / v-if).
+- **Component size (SHOULD)**: nếu component vượt ~200-300 LOC logic, tách nhỏ theo UI + composable.
+- **Style scoping (SHOULD)**: ưu tiên `scoped`.
+  - **MUST** dùng global styles cho design-system/layout/tokens; không nhồi tất cả vào scoped.
 
-## 5. Component Design (MUST)
+## 6) State management (Pinia)
+- **Khi nào dùng store (SHOULD)**: state chia sẻ nhiều nơi, hoặc cần persistence/sync.
+- **Không thần thánh hoá store (MUST)**: state chỉ dùng trong 1 page/component tree => dùng `ref`/`reactive` local.
+- **Mutation rule (SHOULD)**:
+  - Có thể mutate state trong action *hoặc* trực tiếp (Pinia cho phép).
+  - Nhưng **MUST** thống nhất theo project: mọi mutation phức tạp/async phải nằm trong action để trace dễ.
+- **Async actions (MUST)**: luôn handle error (throw hoặc map thành state `error`). Không nuốt lỗi im lặng.
+- **SSR (MUST)**: store phải SSR-safe (không đọc localStorage/cookie trực tiếp khi chạy server).
 
-- **`<script setup>` (MUST)**: dùng `<script setup lang="ts">` cho tất cả component.
-- **Single Responsibility (MUST)**: component không quá 200 dòng (không tính style). Component lớn phải được tách thành các component con.
-- **Props & Emits (MUST)**:
-  - Dùng `defineProps` và `defineEmits` với type-based declaration.
-  - Prop **MUST** có type rõ ràng.
-  - Prop **SHOULD** có `default` value nếu không `required`.
-- **Smart vs Dumb Components (SHOULD)**:
-  - **Smart (Container)**: component ở level page, chịu trách nhiệm fetch data, gọi store action.
-  - **Dumb (Presentational)**: component con, chỉ nhận props và emit event, không tự fetch data hay gọi store.
-- **Scoped Styles (MUST)**: dùng `<style scoped>` để tránh xung đột CSS.
-- **`v-if` vs `v-show` (MUST)**:
-  - `v-if`: dùng khi element ít khi thay đổi trạng thái (chi phí toggle cao).
-  - `v-show`: dùng khi element thay đổi trạng thái thường xuyên (chi phí render ban đầu cao).
+## 7) Composables (Nuxt/Vue)
+- **Composable là unit reuse chính (MUST)**.
+- **Return shape (SHOULD)**: return object có tên rõ (`data`, `pending`, `error`, `refresh`, `execute`).
+- **Side effects (MUST)**: side-effect phải explicit (document bằng tên hàm, ví dụ `startPolling`, `stopPolling`).
+- **Không import vòng (MUST NOT)**: composable A import composable B tạo vòng phụ thuộc.
 
----
+## 8) Data fetching & API layer (Nuxt 4)
+- **MUST** dùng `useFetch`/`useAsyncData` (SSR-friendly) cho data page-level.
+- **MUST** phân biệt:
+  - **Server API (`server/api`)**: nơi giữ secret, gọi 3rd-party cần key.
+  - **Client fetch**: gọi server API hoặc backend public.
+- **Centralized fetch (SHOULD)**: tạo `useApiFetch()` wrap `ofetch`/`$fetch` để:
+  - set `baseURL`
+  - attach auth header
+  - normalize error shape
+- **Key & cache (SHOULD)**:
+  - page data cần cache => `useAsyncData(key, ...)` với `key` ổn định.
+  - tránh key phụ thuộc object non-stable.
+- **Error handling (MUST)**:
+  - UI phải handle `pending/error/empty`.
+  - API errors phải map thành message hữu ích cho user.
 
-## 6. State Management (Pinia) (MUST)
+## 9) Nitro server routes
+- **Handler responsibility (MUST)**: handler chỉ parse/validate/auth rồi gọi service.
+- **Validation (MUST)**: input phải được validate (body/query/params). Không tin client.
+- **Errors (MUST)**: throw `createError({ statusCode, statusMessage, data })` để chuẩn hoá.
+- **No secrets on client (MUST)**: secret chỉ dùng server runtimeConfig (không đặt trong `public`).
 
-- **When to use (SHOULD)**: dùng store cho state global hoặc state cần chia sẻ giữa các page/component không liên quan trực tiếp.
-- **Structure (MUST)**:
-  - **State**: là một function trả về object.
-  - **Getters**: là computed property của store.
-  - **Actions**: là nơi duy nhất được phép thay đổi state. **MUST NOT** thay đổi state trực tiếp từ component.
-- **Actions (MUST)**: action có thể `async`. **MUST** `try/catch` cho các async action.
+## 10) Runtime config & env
+- **MUST** dùng `runtimeConfig` (`nuxt.config.ts`) cho env.
+- **MUST NOT** đọc `process.env.X` rải rác trong code runtime.
+- **MUST** phân tách `runtimeConfig.public` (được expose) và private.
 
----
+## 11) SSR/CSR correctness
+- **MUST** tránh hydration mismatch:
+  - dữ liệu random/timezone-dependent phải generate nhất quán hoặc chạy client-only.
+  - component phụ thuộc DOM => bọc `ClientOnly` hoặc guard `import.meta.client`.
+- **Cookie/Auth (MUST)**: đọc auth token theo cách SSR-compatible (ví dụ `useCookie`).
 
-## 7. Composables (Composition API) (MUST)
+## 12) Styling (Vuetify + CSS)
+- **MUST** tuân theo design tokens/theme của Vuetify (không hardcode màu bừa bãi).
+- **SHOULD** hạn chế magic numbers trong style.
+- **MUST** không override CSS global gây side-effect không dự đoán.
 
-- **Primary Logic Reuse (MUST)**: composable là cách chính để tái sử dụng logic (thay thế hoàn toàn mixins).
-- **Naming (MUST)**: bắt đầu bằng `use...`.
-- **Pureness (SHOULD)**: composable nên là pure function nếu có thể, không gây side-effect ngoài mong muốn.
-- **Input/Output (MUST)**: nhận `ref`/`computed` làm input và return `ref`/`computed`/`function`.
+## 13) i18n (nuxt/i18n)
+- **MUST**: text user-facing phải đi qua i18n (trừ admin/dev-only).
+- **MUST NOT** hardcode string trong component nếu là sản phẩm multi-language.
+- **SHOULD**: key naming theo namespace (ví dụ `course.list.title`).
 
----
+## 14) Performance
+- **SHOULD** dynamic import cho feature nặng.
+- **MUST** chỉ dùng `<ClientOnly>` khi thật sự cần (lạm dụng sẽ mất SSR benefit).
+- **Image optimization (SHOULD)**:
+  - Nếu project cài `@nuxt/image` thì dùng `<NuxtImg>`.
+  - Nếu **chưa cài** (project hiện tại chưa thấy), dùng `<img>` nhưng phải set `width/height`, lazy-loading và tối ưu file.
 
-## 8. Data Fetching (MUST)
+## 15) Security
+- **XSS (MUST)**: tránh `v-html`. Nếu bắt buộc, phải sanitize.
+- **Auth/session (MUST)**: token/cookie handling phải server-aware.
+- **CSRF (NOTE)**: Nuxt không “auto CSRF” cho mọi setup. Nếu dùng cookie-session và endpoint mutate, phải có chiến lược CSRF (SameSite cookie + token/header + origin check) theo backend.
 
-- **Standardization (MUST)**: dùng `useFetch` hoặc `useAsyncData` cho mọi tác vụ fetch data phía client.
-- **Centralized API Calls (SHOULD)**: tạo một composable `useApiFetch` để wrap `useFetch`, tự động thêm `baseURL`, `headers` (như `Authorization`), và xử lý lỗi chung.
-- **Error Handling (MUST)**: luôn xử lý `error` state trả về từ `useFetch`.
-- **Loading State (MUST)**: luôn xử lý `pending` state để hiển thị UI loading.
-- **Key (MUST)**: cung cấp `key` cho `useFetch`/`useAsyncData` khi cần refresh/invalidate cache thủ công.
+## 16) Testing (khuyến nghị theo mức)
+- **SHOULD**: Vitest cho utils/composables/stores.
+- **SHOULD**: component test cho UI critical.
+- **SHOULD**: e2e (Playwright) cho flow quan trọng.
 
----
-
-## 9. Server Engine (Nitro) & API Routes
-
-- **API Handler Responsibility (MUST)**: API handler (`server/api/**/*.ts`) chỉ làm nhiệm vụ điều phối:
-  1. Đọc/validate input (params, body).
-  2. Authorize.
-  3. Gọi logic xử lý (service/util phía server).
-  4. Trả về response.
-  - **MUST NOT** chứa business logic phức tạp.
-- **Security (MUST)**: **MUST NOT** expose secret/API key ra client. Mọi call tới 3rd party API có key phải thực hiện qua server route.
-- **Error Handling (MUST)**: dùng `createError` và `sendError` để trả về lỗi HTTP chuẩn.
-
----
-
-## 10. Styling
-
-- **Scoped Styles (MUST)**: mặc định dùng `<style scoped>`.
-- **Global Styles (SHOULD)**: style global (VD: layout, reset CSS) đặt trong `assets/css/main.css` và import trong `nuxt.config.ts`.
-- **Tailwind CSS (Khuyến nghị)**: nếu dùng, **MUST** định nghĩa design token (colors, spacing, typography) trong `tailwind.config.js`. **MUST NOT** dùng magic value trong class (`mt-[13px]`).
-
----
-
-## 11. Error Handling
-
-- **Global Error Page (MUST)**: tùy chỉnh file `error.vue` để hiển thị trang lỗi thân thiện.
-- **Error Reporting (SHOULD)**: tích hợp service như Sentry/LogRocket qua plugin để report lỗi client-side và server-side.
-- **`try/catch` (MUST)**: dùng trong Pinia actions, event handlers, và những nơi có thể phát sinh lỗi runtime.
-
----
-
-## 12. Performance
-
-- **Image Optimization (MUST)**: dùng `<NuxtImg>` thay vì `<img>` để tự động tối ưu ảnh (format, size).
-- **Lazy Loading (SHOULD)**: lazy load component không cần thiết ngay khi render ban đầu bằng `defineAsyncComponent`.
-- **`<ClientOnly>` (MUST)**: dùng cho component chỉ chạy ở client và không tương thích SSR.
-- **Bundle Analysis (SHOULD)**: định kỳ kiểm tra bundle size với `nuxi analyze` để phát hiện dependency nặng.
-
----
-
-## 13. Testing
-
-- **Unit Testing (MUST)**: dùng Vitest để test:
-  - Composables
-  - Utils/Helpers
-  - Pinia Stores
-- **Component Testing (SHOULD)**: dùng Vue Test Utils để test component (đặc biệt là Dumb component).
-- **E2E Testing (SHOULD)**: dùng Playwright/Cypress cho các user flow quan trọng (login, checkout).
-- **Test Coverage (SHOULD)**: đặt mục tiêu coverage > 80% cho logic quan trọng.
-
----
-
-## 14. Security (MUST)
-
-- **Environment Variables (MUST)**:
-  - Secret/private key **MUST** chỉ tồn tại ở server (runtime config) và không được expose ra client (`public` config).
-  - Dùng file `.env` và không commit vào Git.
-- **XSS (MUST)**: Nuxt/Vue tự động escape content trong template. **MUST NOT** dùng `v-html` với data từ user nếu không được sanitize cẩn thận.
-- **CSRF (MUST)**: Nuxt 3.8+ có sẵn protection. Đảm bảo hiểu và không vô hiệu hoá nếu không có lý do.
-
----
-
-## 15. PR Checklist (Tech Lead – 5 phút) (MUST)
-
-- **Code Style**: code đã được format/lint?
-- **TypeScript**: không có `any`? Type-hint đầy đủ?
-- **Architecture**: component/composable đúng trách nhiệm? Không có logic trong view?
-- **State**: state được quản lý đúng chỗ (local state vs Pinia)? Action có `try/catch`?
-- **Data Fetching**: dùng `useFetch`? Có xử lý loading/error state?
-- **Security**: không expose secret? Không dùng `v-html` bừa bãi?
-- **Testing**: có unit test cho logic mới? Test có ý nghĩa?
+## 17) PR checklist (enforceable)
+- **Correctness**: SSR-safe? không dùng browser API trên server?
+- **Types**: không `any` tuỳ tiện, không non-null assertion bừa.
+- **Data**: handle `pending/error/empty`, không bỏ qua lỗi.
+- **Security**: không expose secret, không `v-html` unsanitized.
+- **Perf**: không import nặng vào entry nếu không cần.
+- **i18n**: không hardcode string user-facing.
